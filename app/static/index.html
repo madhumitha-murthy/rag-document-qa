@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RAG Document Q&A</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e1e4e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #8b949e;
+      margin-bottom: 36px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    /* Upload area */
+    .upload-area {
+      border: 2px dashed #30363d;
+      border-radius: 8px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .upload-area:hover { border-color: #58a6ff; background: #1c2230; }
+    .upload-area.dragging { border-color: #58a6ff; background: #1c2230; }
+
+    .upload-icon { font-size: 2rem; margin-bottom: 10px; }
+
+    .upload-area p {
+      font-size: 0.9rem;
+      color: #8b949e;
+    }
+
+    .upload-area p span {
+      color: #58a6ff;
+      font-weight: 500;
+    }
+
+    #file-input { display: none; }
+
+    .file-name {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #58a6ff;
+      min-height: 20px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 14px;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-upload {
+      background: linear-gradient(90deg, #238636, #2ea043);
+      color: #fff;
+    }
+
+    .btn-query {
+      background: linear-gradient(90deg, #1f6feb, #388bfd);
+      color: #fff;
+    }
+
+    /* Status badge */
+    .status {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    .status.success { background: #1a3a1a; color: #3fb950; border: 1px solid #238636; }
+    .status.error   { background: #3a1a1a; color: #f85149; border: 1px solid #da3633; }
+    .status.loading { background: #1a2a3a; color: #58a6ff; border: 1px solid #1f6feb; }
+
+    /* Query area */
+    textarea {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e1e4e8;
+      font-size: 0.95rem;
+      padding: 12px;
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { outline: none; border-color: #388bfd; }
+
+    .options {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .options label { font-size: 0.85rem; color: #8b949e; }
+
+    .options select {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e1e4e8;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+    }
+
+    /* Answer box */
+    #answer-box {
+      display: none;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    #answer-box h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+    }
+
+    #answer-text {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #e1e4e8;
+      white-space: pre-wrap;
+    }
+
+    .meta {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #8b949e;
+      display: flex;
+      gap: 16px;
+    }
+
+    .meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Chunks */
+    details {
+      margin-top: 16px;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    summary {
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #8b949e;
+      background: #0d1117;
+      user-select: none;
+    }
+
+    summary:hover { color: #58a6ff; }
+
+    .chunk {
+      border-top: 1px solid #30363d;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      color: #8b949e;
+      line-height: 1.6;
+      background: #0d1117;
+    }
+
+    .chunk:not(:last-child) { border-bottom: 1px solid #21262d; }
+  </style>
+</head>
+<body>
+
+  <h1>RAG Document Q&A</h1>
+  <p class="subtitle">Upload a PDF · Ask anything · Get grounded answers</p>
+
+  <!-- Upload Card -->
+  <div class="card">
+    <h2>1 · Upload PDF</h2>
+    <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📄</div>
+      <p>Drag & drop your PDF here or <span>browse</span></p>
+      <input type="file" id="file-input" accept=".pdf" />
+    </div>
+    <div class="file-name" id="file-name"></div>
+    <button class="btn btn-upload" id="upload-btn" disabled onclick="uploadPDF()">Upload & Index</button>
+    <div id="upload-status"></div>
+  </div>
+
+  <!-- Query Card -->
+  <div class="card">
+    <h2>2 · Ask a Question</h2>
+    <textarea id="question" placeholder="e.g. What are the key findings of this document?" rows="3"></textarea>
+    <div class="options">
+      <label>Top-K chunks:</label>
+      <select id="top-k">
+        <option value="3" selected>3</option>
+        <option value="5">5</option>
+        <option value="7">7</option>
+      </select>
+    </div>
+    <button class="btn btn-query" id="query-btn" onclick="askQuestion()">Ask</button>
+    <div id="query-status"></div>
+  </div>
+
+  <!-- Answer Box -->
+  <div id="answer-box">
+    <h2>Answer</h2>
+    <div id="answer-text"></div>
+    <div class="meta">
+      <span>⏱ <span id="latency"></span></span>
+      <span>📦 <span id="chunks-count"></span> chunks retrieved</span>
+    </div>
+    <details>
+      <summary>View retrieved chunks</summary>
+      <div id="chunks-container"></div>
+    </details>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const uploadArea = document.getElementById('upload-area');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileName = document.getElementById('file-name');
+
+    // File selection
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) {
+        fileName.textContent = '📎 ' + fileInput.files[0].name;
+        uploadBtn.disabled = false;
+      }
+    });
+
+    // Drag & drop
+    uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragging'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragging'));
+    uploadArea.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.pdf')) {
+        fileInput.files = e.dataTransfer.files;
+        fileName.textContent = '📎 ' + file.name;
+        uploadBtn.disabled = false;
+      }
+    });
+
+    async function uploadPDF() {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const status = document.getElementById('upload-status');
+      status.innerHTML = '<span class="status loading">⏳ Uploading & indexing...</span>';
+      uploadBtn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (res.ok) {
+          status.innerHTML = `<span class="status success">✅ Indexed ${data.num_chunks} chunks from "${data.filename}"</span>`;
+        } else {
+          status.innerHTML = `<span class="status error">❌ ${data.detail}</span>`;
+        }
+      } catch (e) {
+        status.innerHTML = '<span class="status error">❌ Upload failed</span>';
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    }
+
+    async function askQuestion() {
+      const question = document.getElementById('question').value.trim();
+      const topK = parseInt(document.getElementById('top-k').value);
+      if (!question) return;
+
+      const queryBtn = document.getElementById('query-btn');
+      const status = document.getElementById('query-status');
+      const answerBox = document.getElementById('answer-box');
+
+      status.innerHTML = '<span class="status loading">⏳ Thinking...</span>';
+      queryBtn.disabled = true;
+      answerBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, top_k: topK }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          status.innerHTML = '';
+          document.getElementById('answer-text').textContent = data.answer;
+          document.getElementById('latency').textContent = data.latency_seconds + 's';
+          document.getElementById('chunks-count').textContent = data.retrieved_chunks.length;
+
+          const container = document.getElementById('chunks-container');
+          container.innerHTML = data.retrieved_chunks
+            .map((c, i) => `<div class="chunk"><strong>Chunk ${i+1}:</strong><br>${c}</div>`)
+            .join('');
+
+          answerBox.style.display = 'block';
+          answerBox.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          status.innerHTML = `<span class="status error">❌ ${data.detail}</span>`;
+        }
+      } catch (e) {
+        status.innerHTML = '<span class="status error">❌ Request failed</span>';
+      } finally {
+        queryBtn.disabled = false;
+      }
+    }
+
+    // Submit on Enter (Shift+Enter for newline)
+    document.getElementById('question').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askQuestion(); }
+    });
+  </script>
+
+</body>
+</html>

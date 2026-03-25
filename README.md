@@ -19,6 +19,8 @@ A production-ready REST API that lets you upload any PDF and ask natural languag
 
 > Upload any PDF, ask questions, get grounded answers — all from the browser.
 
+![Web UI screenshot](docs/screenshot.png)
+
 ---
 
 ## What It Does
@@ -199,6 +201,8 @@ rag-qa-api/
 │   ├── s3_utils.py          # AWS S3 upload/download helpers
 │   └── static/
 │       └── index.html       # Dark-theme web UI (drag & drop, real-time feedback)
+├── docs/
+│   └── screenshot.png       # Web UI screenshot
 ├── experiments/
 │   └── run_experiments.py   # MLflow experiment runner (3 configs)
 ├── tests/

@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from dotenv import load_dotenv
 load_dotenv()
 
-from app.pdf_processor import extract_text_from_pdf, split_text_into_chunks
+from app.pdf_processor import extract_text_from_pdf, split_text_into_chunks_by_section
 from app.embeddings import embed_texts, embed_query
 from app.vector_store import build_and_save_index, search
 from app.rag_pipeline import build_prompt, get_llm
@@ -74,7 +74,7 @@ def compute_keyword_recall(answer: str, keywords: list[str]) -> float:
 def build_index_for_config(pdf_path: str, chunk_size: int) -> None:
     """Extract text, chunk, embed, and save FAISS index. Called once per config."""
     text = extract_text_from_pdf(pdf_path)
-    chunks = split_text_into_chunks(text, chunk_size=chunk_size, chunk_overlap=50)
+    chunks = split_text_into_chunks_by_section(text, chunk_size=chunk_size, chunk_overlap=50)
     embeddings = embed_texts(chunks)
     build_and_save_index(embeddings, chunks)
 

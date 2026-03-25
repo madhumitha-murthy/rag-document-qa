@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.pdf_processor import extract_text_from_pdf, split_text_into_chunks
+from app.pdf_processor import extract_text_from_pdf, split_text_into_chunks_by_section
 from app.embeddings import embed_texts
 from app.vector_store import build_and_save_index
 from app.rag_pipeline import query_rag
@@ -57,7 +57,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         if not text:
             raise HTTPException(status_code=400, detail="Could not extract text from PDF.")
 
-        chunks = split_text_into_chunks(text, chunk_size=500, chunk_overlap=50)
+        chunks = split_text_into_chunks_by_section(text, chunk_size=500, chunk_overlap=50)
         embeddings = embed_texts(chunks)
         build_and_save_index(embeddings, chunks)
 

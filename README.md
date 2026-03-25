@@ -180,11 +180,11 @@ Each question in the experiment has a set of expected keywords. `keyword_recall`
 
 | Config | chunk_size | top_k | Avg Latency | Keyword Recall | Retrieval Score | Notes |
 |---|---|---|---|---|---|---|
-| config_1 | 500 | 3 | **0.515s** | 28% | **1.49** | Best latency + retrieval relevance |
-| config_2 | 1000 | 3 | 0.593s | 28% | 1.54 | Larger chunks |
-| config_3 | 500 | 5 | 0.649s | **32%** | 1.56 | Best recall |
+| config_1 | 500 | 3 | 0.671s | 28% | **0.96** | Baseline |
+| config_2 | 1000 | 3 | **0.503s** | 52% | 1.11 | Best latency |
+| config_3 | 500 | 5 | 0.626s | **64%** | 1.01 | Best recall |
 
-> Retrieval score = avg FAISS L2 distance (lower = more relevant chunks retrieved). config_1 is fastest with the most relevant chunks; config_3 retrieves the highest recall by fetching more chunks per query.
+> Retrieval score = avg FAISS L2 distance (lower = more relevant chunks retrieved). config_2 achieves the best latency at 52% recall; config_3 achieves the highest recall (64%) by retrieving more chunks per query. Chunking uses section-aware splitting with natural language context prefixes to improve retrieval precision.
 
 ---
 

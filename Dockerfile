@@ -18,6 +18,10 @@ COPY experiments/ ./experiments/
 # Create directories
 RUN mkdir -p faiss_index mlruns
 
+# AWS env vars (set at runtime via EC2 instance role or -e flags)
+ENV AWS_S3_BUCKET=""
+ENV AWS_S3_PREFIX="rag-qa"
+
 # Expose FastAPI port
 EXPOSE 8000
 

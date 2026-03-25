@@ -7,6 +7,13 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    # Required env vars (set in .env or override here):
+    #   GROQ_API_KEY          - Groq API key (https://console.groq.com)
+    #   AWS_S3_BUCKET         - S3 bucket for durable index + PDF storage
+    #   AWS_S3_PREFIX         - S3 key prefix (default: rag-qa)
+    #   AWS_ACCESS_KEY_ID     - AWS credentials (or use an IAM role on EC2)
+    #   AWS_SECRET_ACCESS_KEY
+    #   AWS_DEFAULT_REGION
     volumes:
       - ./faiss_index:/app/faiss_index
       - ./mlruns:/app/mlruns

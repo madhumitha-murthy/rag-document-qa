@@ -6,6 +6,10 @@ pydantic
 # PDF
 pdfplumber
 
+# Torch CPU-only (avoids downloading huge CUDA/nvidia packages)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+
 # Embeddings
 sentence-transformers
 
@@ -20,6 +24,9 @@ langchain-text-splitters
 
 # MLflow
 mlflow
+
+# AWS
+boto3
 
 # Env
 python-dotenv

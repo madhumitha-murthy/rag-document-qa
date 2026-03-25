@@ -1,9 +1,23 @@
+# Environment
 .env
+
+# Vector store (generated at runtime)
 faiss_index/
+
+# MLflow
 mlruns/
+mlflow.db
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+venv/
+.venv/
+
+# OS
 .DS_Store
+
+# PDFs (potentially sensitive)
 *.pdf
-.env

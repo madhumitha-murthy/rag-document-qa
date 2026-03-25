@@ -11,10 +11,10 @@ def log_experiment(
     chunk_size: int,
     top_k: int,
     latency: float,
-    answer: str,
+    answer_length: int,
     num_chunks_retrieved: int,
     retrieval_score: float,
-    answer_found: int,
+    recall: float,
 ) -> None:
     """Log a single RAG config run to MLflow."""
     mlflow.set_experiment(EXPERIMENT_NAME)
@@ -28,7 +28,7 @@ def log_experiment(
 
         # Metrics
         mlflow.log_metric("latency_seconds", latency)
-        mlflow.log_metric("answer_length_chars", len(answer))
+        mlflow.log_metric("answer_length_chars", answer_length)
         mlflow.log_metric("num_chunks_retrieved", num_chunks_retrieved)
-        mlflow.log_metric("retrieval_score", retrieval_score)   # lower = more relevant
-        mlflow.log_metric("answer_found", answer_found)         # 1 = answered, 0 = not found
+        mlflow.log_metric("retrieval_score", retrieval_score)   # lower = more relevant (avg FAISS L2 distance)
+        mlflow.log_metric("keyword_recall", recall)             # fraction of expected keywords found in answer

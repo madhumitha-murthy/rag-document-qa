@@ -11,6 +11,7 @@ from app.pdf_processor import extract_text_from_pdf, split_text_into_chunks
 from app.embeddings import embed_texts
 from app.vector_store import build_and_save_index
 from app.rag_pipeline import query_rag
+from app.s3_utils import upload_file_to_s3, s3_key_for
 
 app = FastAPI(
     title="RAG-Powered Document Q&A API",
@@ -59,6 +60,9 @@ async def upload_pdf(file: UploadFile = File(...)):
         chunks = split_text_into_chunks(text, chunk_size=500, chunk_overlap=50)
         embeddings = embed_texts(chunks)
         build_and_save_index(embeddings, chunks)
+
+        # Upload original PDF to S3 for durable storage
+        upload_file_to_s3(tmp_path, s3_key_for(file.filename))
 
         return JSONResponse({
             "message": "PDF uploaded and indexed successfully.",

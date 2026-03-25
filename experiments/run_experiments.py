@@ -7,10 +7,9 @@ Configs:
   3. chunk_size=500,  top_k=5  (more retrieved chunks)
 
 Usage:
-  1. Upload a PDF first via /upload endpoint (or run the API and upload manually).
-  2. Set TEST_QUESTION below to a question relevant to your PDF.
-  3. Run: python experiments/run_experiments.py
-  4. View results: mlflow ui  (opens at http://localhost:5000)
+  1. Place a test PDF at faiss_index/test.pdf
+  2. Run: python experiments/run_experiments.py
+  3. View results: mlflow ui  (opens at http://localhost:5000)
 """
 
 import sys
@@ -30,12 +29,29 @@ import time
 
 # ── Configure these ──────────────────────────────────────────────
 PDF_PATH = "faiss_index/test.pdf"
+
+# Ground-truth questions with expected keywords for keyword-based recall
 TEST_QUESTIONS = [
-    "What are Madhumitha's research publications?",
-    "What is Madhumitha's work experience?",
-    "What ML frameworks and tools does Madhumitha know?",
-    "What projects has Madhumitha built?",
-    "What are Madhumitha's educational qualifications?",
+    {
+        "question": "What are Madhumitha's research publications?",
+        "keywords": ["publication", "research", "paper", "journal", "conference"],
+    },
+    {
+        "question": "What is Madhumitha's work experience?",
+        "keywords": ["experience", "intern", "engineer", "company", "worked"],
+    },
+    {
+        "question": "What ML frameworks and tools does Madhumitha know?",
+        "keywords": ["python", "tensorflow", "pytorch", "sklearn", "langchain"],
+    },
+    {
+        "question": "What projects has Madhumitha built?",
+        "keywords": ["project", "built", "developed", "system", "api"],
+    },
+    {
+        "question": "What are Madhumitha's educational qualifications?",
+        "keywords": ["degree", "university", "bachelor", "master", "gpa"],
+    },
 ]
 # ─────────────────────────────────────────────────────────────────
 
@@ -46,21 +62,29 @@ CONFIGS = [
 ]
 
 
-def run_single_config(pdf_path: str, question: str, chunk_size: int, top_k: int) -> dict:
-    """Run full RAG pipeline for a given config and return results."""
-    # Re-chunk and re-index for this config
-    from app.pdf_processor import extract_text_from_pdf, split_text_into_chunks
+def compute_keyword_recall(answer: str, keywords: list[str]) -> float:
+    """Return fraction of expected keywords found in the answer (case-insensitive)."""
+    if not keywords:
+        return 0.0
+    answer_lower = answer.lower()
+    found = sum(1 for kw in keywords if kw.lower() in answer_lower)
+    return round(found / len(keywords), 4)
+
+
+def build_index_for_config(pdf_path: str, chunk_size: int) -> None:
+    """Extract text, chunk, embed, and save FAISS index. Called once per config."""
     text = extract_text_from_pdf(pdf_path)
     chunks = split_text_into_chunks(text, chunk_size=chunk_size, chunk_overlap=50)
     embeddings = embed_texts(chunks)
     build_and_save_index(embeddings, chunks)
 
-    # Retrieve
+
+def run_question(question: str, top_k: int) -> dict:
+    """Run retrieval + generation for a single question against the current index."""
     start = time.time()
     query_emb = embed_query(question)
     retrieved, avg_distance = search(query_emb, top_k=top_k)
 
-    # Generate answer
     prompt = build_prompt(question, retrieved)
     llm = get_llm()
     messages = [
@@ -70,15 +94,10 @@ def run_single_config(pdf_path: str, question: str, chunk_size: int, top_k: int)
     response = llm.invoke(messages)
     latency = round(time.time() - start, 3)
 
-    answer = response.content
-    answer_found = 0 if "could not find" in answer.lower() else 1
-
     return {
-        "answer": answer,
+        "answer": response.content,
         "latency": latency,
-        "num_chunks": len(retrieved),
-        "retrieval_score": round(avg_distance, 4),
-        "answer_found": answer_found,
+        "avg_distance": round(avg_distance, 4),
     }
 
 
@@ -89,31 +108,32 @@ def main():
         return
 
     print(f"Running 3 experiments on: {PDF_PATH}")
-    print(f"Questions: {len(TEST_QUESTIONS)} questions per config\n")
+    print(f"Questions: {len(TEST_QUESTIONS)} per config\n")
 
     for cfg in CONFIGS:
-        print(f"Running {cfg['name']} ...")
+        print(f"── {cfg['name']} ──")
 
-        latencies, retrieval_scores, answer_founds, answer_lengths = [], [], [], []
+        # Build index ONCE per config, not once per question
+        print(f"  Building index (chunk_size={cfg['chunk_size']})...")
+        build_index_for_config(PDF_PATH, cfg["chunk_size"])
 
-        for question in TEST_QUESTIONS:
-            result = run_single_config(
-                PDF_PATH,
-                question,
-                chunk_size=cfg["chunk_size"],
-                top_k=cfg["top_k"],
-            )
+        latencies, distances, recalls, answer_lengths = [], [], [], []
+
+        for item in TEST_QUESTIONS:
+            result = run_question(item["question"], top_k=cfg["top_k"])
+            recall = compute_keyword_recall(result["answer"], item["keywords"])
+
             latencies.append(result["latency"])
-            retrieval_scores.append(result["retrieval_score"])
-            answer_founds.append(result["answer_found"])
+            distances.append(result["avg_distance"])
+            recalls.append(recall)
             answer_lengths.append(len(result["answer"]))
-            print(f"  Q: {question[:60]}...")
-            print(f"     answer_found={result['answer_found']} | latency={result['latency']}s | retrieval_score={result['retrieval_score']}")
 
-        # Average metrics across all questions
+            print(f"  Q: {item['question'][:60]}...")
+            print(f"     recall={recall:.2f} | latency={result['latency']}s | dist={result['avg_distance']}")
+
         avg_latency = round(sum(latencies) / len(latencies), 3)
-        avg_retrieval_score = round(sum(retrieval_scores) / len(retrieval_scores), 4)
-        avg_answer_found = round(sum(answer_founds) / len(answer_founds), 2)
+        avg_distance = round(sum(distances) / len(distances), 4)
+        avg_recall = round(sum(recalls) / len(recalls), 4)
         avg_answer_length = int(sum(answer_lengths) / len(answer_lengths))
 
         log_experiment(
@@ -121,13 +141,13 @@ def main():
             chunk_size=cfg["chunk_size"],
             top_k=cfg["top_k"],
             latency=avg_latency,
-            answer="x" * avg_answer_length,
+            answer_length=avg_answer_length,
             num_chunks_retrieved=cfg["top_k"],
-            retrieval_score=avg_retrieval_score,
-            answer_found=avg_answer_found,
+            retrieval_score=avg_distance,
+            recall=avg_recall,
         )
 
-        print(f"\n  AVG → latency={avg_latency}s | retrieval_score={avg_retrieval_score} | answer_found={avg_answer_found}\n")
+        print(f"\n  AVG → latency={avg_latency}s | keyword_recall={avg_recall} | retrieval_score={avg_distance}\n")
 
     print("All experiments logged.")
     print("View results: mlflow ui   →  http://localhost:5000")

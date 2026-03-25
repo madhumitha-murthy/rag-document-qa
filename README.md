@@ -178,13 +178,13 @@ Tracked metrics per run: `latency_seconds`, `answer_length_chars`, `num_chunks_r
 
 Each question in the experiment has a set of expected keywords. `keyword_recall` is the average fraction of those keywords that appear in the model's answer across all 5 test questions.
 
-| Config | chunk_size | top_k | Avg Latency | Keyword Recall | Notes |
-|---|---|---|---|---|---|
-| config_1 | 500 | 3 | — | — | Baseline |
-| config_2 | 1000 | 3 | — | — | Larger chunks |
-| config_3 | 500 | 5 | — | — | More chunks |
+| Config | chunk_size | top_k | Avg Latency | Keyword Recall | Retrieval Score | Notes |
+|---|---|---|---|---|---|---|
+| config_1 | 500 | 3 | **0.515s** | 28% | **1.49** | Best latency + retrieval relevance |
+| config_2 | 1000 | 3 | 0.593s | 28% | 1.54 | Larger chunks |
+| config_3 | 500 | 5 | 0.649s | **32%** | 1.56 | Best recall |
 
-> Run `python experiments/run_experiments.py` to populate the table with real results.
+> Retrieval score = avg FAISS L2 distance (lower = more relevant chunks retrieved). config_1 is fastest with the most relevant chunks; config_3 retrieves the highest recall by fetching more chunks per query.
 
 ---
 

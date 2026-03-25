@@ -34,23 +34,23 @@ PDF_PATH = "faiss_index/test.pdf"
 TEST_QUESTIONS = [
     {
         "question": "What are Madhumitha's research publications?",
-        "keywords": ["publication", "research", "paper", "journal", "conference"],
+        "keywords": ["IEEE", "npj", "EACL", "published", "workshop"],
     },
     {
         "question": "What is Madhumitha's work experience?",
-        "keywords": ["experience", "intern", "engineer", "company", "worked"],
+        "keywords": ["I2R", "NTU", "Zoho", "Research", "Teaching"],
     },
     {
         "question": "What ML frameworks and tools does Madhumitha know?",
-        "keywords": ["python", "tensorflow", "pytorch", "sklearn", "langchain"],
+        "keywords": ["PyTorch", "TensorFlow", "HuggingFace", "scikit-learn", "FastAPI"],
     },
     {
         "question": "What projects has Madhumitha built?",
-        "keywords": ["project", "built", "developed", "system", "api"],
+        "keywords": ["document", "fine-tuning", "anomaly", "Dravidian", "sentiment"],
     },
     {
         "question": "What are Madhumitha's educational qualifications?",
-        "keywords": ["degree", "university", "bachelor", "master", "gpa"],
+        "keywords": ["MSc", "NTU", "Nanyang", "Bachelor", "Anna University"],
     },
 ]
 # ─────────────────────────────────────────────────────────────────

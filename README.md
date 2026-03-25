@@ -51,7 +51,7 @@ HuggingFace all-MiniLM-L6-v2   ← 384-dim sentence embeddings
 FAISS IndexFlatL2               ← persisted vector store
     │
     ▼
-AWS S3                          ← durable backup (index + chunks + PDF)
+AWS S3 (optional)               ← durable backup (index + chunks + PDF)
     │
     ▼  (at query time: top-k similarity search; loads from S3 if not local)
     │
@@ -95,7 +95,7 @@ pip install -r requirements.txt
 
 # 2. Create a .env file from the example and fill in your keys
 cp .env.example .env
-# Edit .env and set GROQ_API_KEY and AWS_S3_BUCKET
+# Edit .env — GROQ_API_KEY is required; AWS_S3_BUCKET is optional (local index used if not set)
 
 # 3. Start the server
 uvicorn app.main:app --reload
@@ -190,10 +190,10 @@ Each question in the experiment has a set of expected keywords. `keyword_recall`
 ## Project Structure
 
 ```
-rag-qa-api/
+rag-document-qa/
 ├── app/
 │   ├── main.py              # FastAPI app — /upload and /query endpoints
-│   ├── pdf_processor.py     # PDF text extraction and recursive chunking
+│   ├── pdf_processor.py     # PDF text extraction and section-aware chunking
 │   ├── embeddings.py        # Sentence Transformer embeddings (cached)
 │   ├── vector_store.py      # FAISS index build, persist, search + S3 fallback
 │   ├── rag_pipeline.py      # LangChain RAG chain + Groq LLM integration
@@ -225,12 +225,16 @@ Create a `.env` file in the project root:
 ```env
 # Required
 GROQ_API_KEY=your_groq_api_key_here
-AWS_S3_BUCKET=your_s3_bucket_name
 
-# Optional
-AWS_S3_PREFIX=rag-qa          # S3 key prefix, defaults to "rag-qa"
+# Optional — S3 for durable cross-session storage (index + PDF backup)
+# If not set, the FAISS index is stored locally only
+AWS_S3_BUCKET=your_s3_bucket_name
+AWS_S3_PREFIX=rag-qa              # S3 key prefix, defaults to "rag-qa"
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+AWS_DEFAULT_REGION=us-east-1
 ```
 
 - Get a free Groq API key at [console.groq.com](https://console.groq.com).
 - S3 credentials are read from the standard AWS credential chain (env vars, `~/.aws/credentials`, or EC2 IAM role).
-- All other parameters (chunk size, embedding model, LLM temperature) are set in source and documented in the code.
+- The API works fully without AWS — S3 upload is skipped gracefully if credentials are not set.

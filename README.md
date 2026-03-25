@@ -10,7 +10,7 @@ A production-ready REST API that lets you upload any PDF and ask natural languag
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![MLflow](https://img.shields.io/badge/Experiment_Tracking-MLflow-0194E2?logo=mlflow&logoColor=white)
 ![AWS S3](https://img.shields.io/badge/Storage-AWS_S3-FF9900?logo=amazons3&logoColor=white)
-![CI](https://github.com/madhumitha-murthy/rag-qa-api/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/madhumitha-murthy/rag-document-qa/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
@@ -18,9 +18,6 @@ A production-ready REST API that lets you upload any PDF and ask natural languag
 ## Demo
 
 > Upload any PDF, ask questions, get grounded answers — all from the browser.
-
-<!-- Add a screenshot of the web UI here -->
-<!-- ![Web UI screenshot](docs/screenshot.png) -->
 
 ---
 
@@ -43,7 +40,7 @@ PDF Upload
 pdfplumber (text extraction)
     │
     ▼
-RecursiveCharacterTextSplitter  ← chunk_size=500, overlap=50
+Section-aware chunking           ← splits by section headers, NL context prefix per chunk
     │
     ▼
 HuggingFace all-MiniLM-L6-v2   ← 384-dim sentence embeddings
@@ -90,8 +87,8 @@ JSON Response  { answer, retrieved_chunks, latency_seconds }
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/madhumitha-murthy/rag-qa-api
-cd rag-qa-api
+git clone https://github.com/madhumitha-murthy/rag-document-qa
+cd rag-document-qa
 pip install -r requirements.txt
 
 # 2. Create a .env file from the example and fill in your keys
@@ -204,6 +201,11 @@ rag-qa-api/
 │       └── index.html       # Dark-theme web UI (drag & drop, real-time feedback)
 ├── experiments/
 │   └── run_experiments.py   # MLflow experiment runner (3 configs)
+├── tests/
+│   ├── test_pdf_processor.py
+│   ├── test_embeddings.py
+│   └── test_rag_pipeline.py
+├── .github/workflows/ci.yml # CI — runs tests on every push
 ├── Dockerfile
 ├── docker-compose.yml       # API + MLflow UI services
 ├── requirements.txt

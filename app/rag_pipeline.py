@@ -54,12 +54,9 @@ def query_rag(question: str, top_k: int = 3) -> dict:
     answer = response.content
 
     latency = round(time.time() - start, 3)
-    answer_found = 0 if "could not find" in answer.lower() else 1
 
     return {
         "answer": answer,
         "retrieved_chunks": retrieved_chunks,
         "latency_seconds": latency,
-        "retrieval_score": round(avg_distance, 4),
-        "answer_found": answer_found,
     }

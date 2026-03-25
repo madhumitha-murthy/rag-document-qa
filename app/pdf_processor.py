@@ -10,13 +10,13 @@ SECTION_HEADERS = [
 
 # Natural language prefix per section — makes embeddings semantically queryable
 SECTION_CONTEXT = {
-    "Summary":      "Professional summary and background of Madhumitha:",
-    "Education":    "Educational qualifications and degrees of Madhumitha:",
-    "Experience":   "Work experience, employment history, and job roles of Madhumitha:",
-    "Projects":     "Projects built and developed by Madhumitha:",
-    "Publications": "Research publications and papers authored by Madhumitha:",
-    "Skills":       "Technical skills, tools, and frameworks known by Madhumitha:",
-    "Achievements": "Awards, achievements, and competition results of Madhumitha:",
+    "Summary":      "Professional summary and background in this document:",
+    "Education":    "Educational qualifications and degrees in this document:",
+    "Experience":   "Work experience, employment history, and job roles in this document:",
+    "Projects":     "Projects built and developed as described in this document:",
+    "Publications": "Research publications and papers authored as described in this document:",
+    "Skills":       "Technical skills, tools, and frameworks in this document:",
+    "Achievements": "Awards, achievements, and competition results in this document:",
 }
 
 # Regex: match a section header on its own line, allowing leading whitespace

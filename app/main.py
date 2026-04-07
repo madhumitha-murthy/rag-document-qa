@@ -31,6 +31,8 @@ class QueryResponse(BaseModel):
     answer: str
     retrieved_chunks: list[str]
     latency_seconds: float
+    grounding_score: float
+    hallucination_risk: str
 
 
 @app.get("/")
